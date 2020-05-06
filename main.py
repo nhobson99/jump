@@ -6,16 +6,26 @@ except ImportError:
     exit()
 import time
 import serial
+import sys
+import os
+
+write = (len(sys.argv) > 1)
+
+if (write):
+    outfile = open(sys.argv[1], 'w+')
+    outfile.write("Temperature(C),xPos,yPos\n")
 
 arduino = serial.Serial('/dev/ttyACM0')
-arduino.baudrate = 9600
+arduino.baudrate = 115200
 arduino.timeout = None
 
 if (not arduino.is_open):
     exit()
 
 def calculate(*args):
-    arduino.write(bytes("1", "ascii"))
+    global outfile
+    outfile.flush()
+    arduino.write(bytes(";", "ascii"))
     try:
         T = arduino.readline().split()
         if (T[0] != bytes("Temperature(C):", "ascii")):
@@ -25,9 +35,14 @@ def calculate(*args):
         yPos = arduino.readline().split()
         if (T):
             temperature.set(T[1])
-            xShow.set(xPos[1]);
-            yShow.set(yPos[1]);
+            xShow.set(xPos[1])
+            yShow.set(yPos[1])
             hits.set(hits.get()+1)
+            if (write):
+                output = (str(T[1].decode("ascii")) + ',')
+                output += (str(xPos[1].decode("ascii")) + ',')
+                output += (str(yPos[1].decode("ascii")) + '\n')
+                outfile.write(output)
         else:
             misses.set(misses.get()+1)
     except ValueError:
@@ -40,11 +55,14 @@ def sendDataWrapper():
     sendData(None)
 
 def sendData(event):
-    arduino.write(bytes("1"+data.get(), "ascii"))
+    arduino.write(bytes(data.get()+';', "ascii"))
 
 def endTK(event):
+    global outfile
     root.destroy()
     arduino.close()
+    outfile.flush()
+    outfile.close()
     quit = True
 
 def key(event):
