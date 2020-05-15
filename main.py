@@ -24,7 +24,6 @@ if (not arduino.is_open):
 
 def calculate(*args):
     global outfile
-    outfile.flush()
     arduino.write(bytes(";", "ascii"))
     try:
         T = arduino.readline().split()
@@ -61,7 +60,6 @@ def endTK(event):
     global outfile
     root.destroy()
     arduino.close()
-    outfile.flush()
     outfile.close()
     quit = True
 
